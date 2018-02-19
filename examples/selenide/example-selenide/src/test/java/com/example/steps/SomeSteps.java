@@ -3,13 +3,16 @@ package com.example.steps;
 import com.aspenshore.relish.core.TableRow;
 import com.example.components.AddTaskPage;
 import com.example.components.TaskPage;
-import cucumber.api.PendingException;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import org.json.JSONArray;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class SomeSteps {
     private TaskPage taskPage = new TaskPage();
@@ -35,5 +38,13 @@ public class SomeSteps {
     @Then("^I will see this on the list of tasks$")
     public void iWillSeeThisOnTheListOfTasks(List<TableRow> tasks) {
         taskPage.taskTable().matches(tasks);
+    }
+
+    @Given("^I have the following tasks$")
+    public void iHaveTheFollowingTasks(List<TableRow> tasks) {
+        taskPage.launch();
+        String json = new JSONArray(tasks.stream().map(t -> t.toObjectMap()).collect(toList())).toString();
+        taskPage.executeJavaScript("return (function(tasks){localStorage.setItem('tasks', tasks)})(arguments[0])", json);
+        taskPage.refreshPage();
     }
 }

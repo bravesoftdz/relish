@@ -52,4 +52,8 @@ public class Page extends Component {
     public void launch() {
         open(URI.create(Configuration.baseUrl).resolve(getPath()).toString());
     }
+
+    public void executeJavaScript(String javaScript, Object... arguments) {
+        Selenide.executeJavaScript(javaScript, arguments);
+    }
 }
