@@ -22,7 +22,7 @@ public class TestUtils {
             try {
                 runnable.run();
                 succeeded = true;
-            } catch (Exception e1) {
+            } catch (Throwable e1) {
                 try {
                     Thread.sleep(pause);
                 } catch (InterruptedException e2) {

@@ -4,16 +4,20 @@ import com.aspenshore.relish.core.*;
 import com.codeborne.selenide.SelenideElement;
 import org.openqa.selenium.By;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.aspenshore.relish.core.TestUtils.attempt;
+import static com.codeborne.selenide.Selenide.$;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class Table extends SelenideWidget {
+    private Map<String, Function<SelenideElement, SelenideWidget>> factories = new HashMap<>();
+
     public Table(By selector, Component parent) {
         super(selector, parent);
     }
@@ -26,6 +30,12 @@ public class Table extends SelenideWidget {
         String[] ths = get().findElements(By.tagName("th")).stream()
                 .map(e -> toGetter(e.getText())).collect(toList()).toArray(new String[]{});
         return ths;
+    }
+
+    public Table with(String name, Function<SelenideElement, SelenideWidget> factory) {
+        Table clone = new Table(get(), getParent());
+        clone.factories.put(name, factory);
+        return clone;
     }
 
     /**
@@ -65,8 +75,26 @@ public class Table extends SelenideWidget {
             for (TableRow assertRow : sheetTable) {
                 assertThat(screenRows.get(i++), TableRowMatchers.getableMatchesAll(assertRow));
             }
-        }, 500, 3);
+        }, 500, 8);
     }
+
+    public List<RowInTable> rows() {
+        String[] headings = headings();
+        return get().findElements(By.tagName("tr")).stream()
+                // Ignore rows without TD elements
+                .filter(e -> !e.findElements(By.tagName("td")).isEmpty())
+                .map(e -> new RowInTable($(e), this).withFactories(factories))
+                .collect(toList());
+    }
+
+    public List<RowInTable> rows(Predicate<? super RowInTable> filter) {
+        return rows().stream().filter(filter).collect(toList());
+    }
+
+    public List<RowInTable> rows(String cellName, String value) {
+        return rows(r -> value.equals(r.cell(cellName).getStringValue()));
+    }
+
 
     private String toGetter(String s) {
         String join = String.join("", Arrays.stream(s.replaceAll("/", " ").split("\\s"))

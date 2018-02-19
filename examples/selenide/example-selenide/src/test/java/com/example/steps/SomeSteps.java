@@ -1,6 +1,8 @@
 package com.example.steps;
 
 import com.aspenshore.relish.core.TableRow;
+import com.aspenshore.relish.selenide.Checkbox;
+import com.aspenshore.relish.selenide.SelenideWidget;
 import com.example.components.AddTaskPage;
 import com.example.components.TaskPage;
 import cucumber.api.java.en.Given;
@@ -43,8 +45,18 @@ public class SomeSteps {
     @Given("^I have the following tasks$")
     public void iHaveTheFollowingTasks(List<TableRow> tasks) {
         taskPage.launch();
-        String json = new JSONArray(tasks.stream().map(t -> t.toObjectMap()).collect(toList())).toString();
+        String json = new JSONArray(tasks.stream().map(TableRow::toObjectMap).collect(toList())).toString();
         taskPage.executeJavaScript("return (function(tasks){localStorage.setItem('tasks', tasks)})(arguments[0])", json);
         taskPage.refreshPage();
+    }
+
+    @When("^I delete the task '([^']+)'$")
+    public void iDeleteTheTaskBuySomeBread(String taskName) {
+        taskPage.taskTable()
+                .rows("name", taskName)
+                .stream()
+                .map(r -> r.cell("select"))
+                .forEach(s -> ((Checkbox)s).check());
+        taskPage.deleteButton().click();
     }
 }
